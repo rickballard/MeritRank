@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opename.org/schema/scripttagger-session.json",
+  "title": "ScripTagger Session",
+  "type": "object",
+  "required": ["session_id","source","segments","dims"],
+  "properties": {
+    "session_id": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "required": ["type","id"],
+      "properties": {
+        "type": { "enum": ["url","file","mic"] },
+        "id":   { "type": "string" }
+      }
+    },
+    "dims": {
+      "type": "array",
+      "items": { "enum": ["TruthAlignment","EvidenceHygiene","CivicConduct","Anti-Manipulation","AmplificationQuality"] }
+    },
+    "segments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["idx","text","scores"],
+        "properties": {
+          "idx": { "type": "integer", "minimum": 0 },
+          "text":{ "type": "string" },
+          "time":{ "type": "object", "properties": { "start": { "type":"number" }, "end": { "type":"number" } } },
+          "scores": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["dim","score"],
+              "properties": {
+                "dim":   { "type":"string" },
+                "score": { "type":"number", "minimum": 0, "maximum": 1 },
+                "explain":  { "type":"string" },
+                "evidence": { "type":"array", "items":{"type":"string","format":"uri"} }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rep_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "actor": { "type":"string" },
+          "target":{ "type":"string" },
+          "type":  { "enum": ["credit","demerit"] },
+          "reason":{ "type":"string" },
+          "evidence_url": { "type":"string","format":"uri" },
+          "confidence":   { "type":"number","minimum":0,"maximum":1 },
+          "status":       { "enum": ["unverified","queued","published"] }
+        }
+      }
+    }
+  }
+}

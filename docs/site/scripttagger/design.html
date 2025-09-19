@@ -20,31 +20,31 @@
 <main class="card">
   <h1>ScripTagger: design notes</h1>
 
-  <h2>Behavior-safe, jargonless UX</h2>
+  <h2>Summary-first, transcript optional</h2>
   <ul>
-    <li><strong>One big action:</strong> “Record / Import.”</li>
-    <li><strong>Five simple chips:</strong> Truth · Evidence · Conduct · Anti-Manipulation · Amplification.</li>
-    <li><strong>+ Source link</strong> is always visible before any critique.</li>
-    <li><strong>Kid-friendly text:</strong> “Was this part honest?” “Did it cite where facts came from?”</li>
-    <li><strong>Private by default:</strong> sessions save locally; sharing is opt-in.</li>
+    <li>Default output is a <strong>two-panel summary</strong>: <em>Best claims</em> (well-sourced) and <em>Questions to verify</em> (needs evidence).</li>
+    <li>Transcript exists but is <strong>off by default</strong>; users can reveal/export it later.</li>
   </ul>
 
-  <h2>Unverified → Consensus → Positive-only publication</h2>
-  <p>Each submission is an <em>observation</em>. Observations for the same event are clustered by media URL, timestamps, and audio/text fingerprint. We compute an internal consensus; only
-  well-supported <em>positive</em> moments become public RepTag credits. Negatives never publish.</p>
+  <h2>Speaker inference from public posts</h2>
+  <p>Most events are posted online. The app tries to <em>infer</em> the speaker via shared URL + page metadata (channel/author/title/date),
+  and may add a <code>speaker_hypothesis</code> with a confidence score. Submissions remain
+  <strong>observations</strong> until crowd consensus confirms.</p>
 
+  <h2>Unverified → Consensus → Positive-only publication</h2>
   <pre><code>score(dim, segment) = weighted_mean_i ( user_weight_i × evidence_weight_i × rating_i )
 
 user_weight = f(RepTag⁺)          # positive-only component, bounded
 evidence_weight = g(citations, independence, cross-agreement)
 publish if: support ≥ threshold &amp;&amp; independence ≥ min &amp;&amp; no-policy-violations
-  → mint positive credit (RepTag)</code></pre>
+  → mint positive credit (RepTag)     # negatives never publish
+</code></pre>
 
   <h2>Consent &amp; safety</h2>
   <ul>
-    <li>“Assistance, not verdicts” banner on every page.</li>
-    <li>Opt-in “Contribute my session” toggle; JSON is signed &amp; hash-anchored.</li>
-    <li>Minimize PII; redact minors and sensitive data where possible.</li>
+    <li>“Assistance, not verdicts.”</li>
+    <li>Local-first; opt-in to contribute signed JSON to the append-only log.</li>
+    <li>Minimize PII; redact minors/sensitive info.</li>
   </ul>
 
   <p><a class="btn" href="/downloads/scripttagger.html">Get the app (pre-alpha apology)</a></p>

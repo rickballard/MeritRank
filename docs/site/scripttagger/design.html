@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ScripTagger Design — Opename</title>
+<link rel="stylesheet" href="https://opename.org/assets/style.css">
+<body>
+<header>
+  <nav>
+    <a class="brand" href="https://opename.org/">
+      <img src="/assets/opename-192.png" alt="Opename logo" class="brand-logo"><span>Opename</span>
+    </a>
+    <a href="https://opename.org/reptag/">RepTag</a>
+    <a href="https://opename.org/scripttag/">ScripTag</a>
+    <a href="https://opename.org/meritrank/">MeritRank</a>
+    <a href="https://opename.org/submit.html">Submit</a>
+    <a href="https://opename.org/evidence.html">Evidence</a>
+    <a href="https://opename.org/docs/">Docs</a>
+  </nav>
+</header>
+
+<main class="card">
+  <h1>ScripTagger: design notes</h1>
+
+  <h2>Behavior-safe, jargonless UX</h2>
+  <ul>
+    <li><strong>One big action:</strong> “Record / Import.”</li>
+    <li><strong>Five simple chips:</strong> Truth · Evidence · Conduct · Anti-Manipulation · Amplification.</li>
+    <li><strong>+ Source link</strong> is always visible before any critique.</li>
+    <li><strong>Kid-friendly text:</strong> “Was this part honest?” “Did it cite where facts came from?”</li>
+    <li><strong>Private by default:</strong> sessions save locally; sharing is opt-in.</li>
+  </ul>
+
+  <h2>Unverified → Consensus → Positive-only publication</h2>
+  <p>Each submission is an <em>observation</em>. Observations for the same event are clustered by media URL, timestamps, and audio/text fingerprint. We compute an internal consensus; only
+  well-supported <em>positive</em> moments become public RepTag credits. Negatives never publish.</p>
+
+  <pre><code>score(dim, segment) = weighted_mean_i ( user_weight_i × evidence_weight_i × rating_i )
+
+user_weight = f(RepTag⁺)          # positive-only component, bounded
+evidence_weight = g(citations, independence, cross-agreement)
+publish if: support ≥ threshold &amp;&amp; independence ≥ min &amp;&amp; no-policy-violations
+  → mint positive credit (RepTag)</code></pre>
+
+  <h2>Consent &amp; safety</h2>
+  <ul>
+    <li>“Assistance, not verdicts” banner on every page.</li>
+    <li>Opt-in “Contribute my session” toggle; JSON is signed &amp; hash-anchored.</li>
+    <li>Minimize PII; redact minors and sensitive data where possible.</li>
+  </ul>
+
+  <p><a class="btn" href="/downloads/scripttagger.html">Get the app (pre-alpha apology)</a></p>
+</main>
+
+<footer>
+  <div>© 2025 Opename · <a href="https://opename.org/privacy.html">Privacy</a> · <a href="https://opename.org/terms.html">Terms</a> · <a href="https://github.com/rickballard/opename-ops">Ops</a></div>
+</footer>
+</body></html>

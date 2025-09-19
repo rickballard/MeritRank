@@ -44,6 +44,55 @@
         }
       }
     },
+
+    /* NEW: inference & summary (optional) */
+    "speaker_hypothesis": {
+      "type": "array",
+      "items": {
+        "type":"object",
+        "properties": {
+          "name": { "type":"string" },
+          "source_url": { "type":"string","format":"uri" },
+          "method": { "enum": ["url-meta","channel","caption","voiceprint","face","user-entry"] },
+          "confidence": { "type":"number","minimum":0,"maximum":1 }
+        }
+      }
+    },
+    "event_match": {
+      "type":"object",
+      "properties": {
+        "canonical_url": { "type":"string","format":"uri" },
+        "fingerprints": { "type":"array", "items": { "type":"string" } },
+        "confidence": { "type":"number","minimum":0,"maximum":1 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "best_claims": {
+          "type":"array",
+          "items": { "type":"object",
+            "properties": {
+              "text": { "type":"string" },
+              "evidence": { "type":"array", "items":{"type":"string","format":"uri"} },
+              "rationale": { "type":"string" }
+            }
+          }
+        },
+        "questions": {
+          "type":"array",
+          "items": { "type":"object",
+            "properties": {
+              "text": { "type":"string" },
+              "needed_evidence": { "type":"string" },
+              "rationale": { "type":"string" }
+            }
+          }
+        },
+        "include_transcript": { "type":"boolean", "default": false }
+      }
+    },
+
     "rep_actions": {
       "type": "array",
       "items": {

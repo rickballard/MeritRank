@@ -16,23 +16,14 @@
 <main class="card">
   <h1>ScripTagger (tap around)</h1>
 
-  <label>Event title
-    <input id="title" placeholder="City Hall Q&amp;A (Apr 4)" />
-  </label>
-
-  <label>Speaker (as claimed)
-    <input id="speaker" placeholder="@handle or First Last" />
-  </label>
-
-  <label>Source link (YouTube, livestream, article…)
+  <label>Event link (YouTube/livestream/article)
     <input id="src" placeholder="https://…"/>
   </label>
 
-  <label>Segment text (~20 sentences)
-    <textarea id="text" rows="6" placeholder="Paste what was said here…"></textarea>
-  </label>
+  <label>What stood out? (paste a few sentences)</label>
+  <textarea id="text" rows="6" placeholder="Paste brief notes or quotes…"></textarea>
 
-  <div id="chips" class="chips">
+  <div class="chips">
     <button data-dim="TruthAlignment">Truth</button>
     <button data-dim="EvidenceHygiene">Evidence</button>
     <button data-dim="CivicConduct">Conduct</button>
@@ -40,15 +31,32 @@
     <button data-dim="AmplificationQuality">Amplif.</button>
   </div>
 
+  <label><input type="checkbox" id="includeTranscript"> Include transcript (optional)</label>
+
   <div class="actions">
-    <button id="export">Export (JSON preview)</button>
+    <button id="build">Build my summary</button>
     <a id="issue" class="btn" href="#" target="_blank" rel="noopener">Prefill evidence issue</a>
   </div>
 
-  <pre id="out" style="white-space:pre-wrap;display:none;"></pre>
+  <h2 style="margin-top:1rem">Summary</h2>
+  <div class="grid">
+    <div>
+      <h3>Best claims</h3>
+      <ol id="best"></ol>
+    </div>
+    <div>
+      <h3>Questions to verify</h3>
+      <ol id="questions"></ol>
+    </div>
+  </div>
 
-  <p class="muted">This is a demo. Real recording &amp; uploads are disabled.
-  Submissions are observations only; positives publish after consensus.</p>
+  <details id="txWrap" style="margin-top:1rem; display:none;">
+    <summary>Transcript (optional)</summary>
+    <pre id="tx"></pre>
+  </details>
+
+  <p class="muted">Demo only. Real recording & uploads disabled. Observations feed
+  consensus; only positive credits publish.</p>
 </main>
 
 <footer>
@@ -56,39 +64,55 @@
 </footer>
 
 <script>
-const chips = document.querySelectorAll('#chips button');
+const chips = document.querySelectorAll('.chips button');
 const picked = new Set();
-chips.forEach(b => b.addEventListener('click', e => {
+chips.forEach(b => b.addEventListener('click', () => {
   const dim = b.dataset.dim;
   if (picked.has(dim)) { picked.delete(dim); b.classList.remove('on'); }
   else { picked.add(dim); b.classList.add('on'); }
 }));
 
 const q = s => document.getElementById(s);
-function jsonPreview() {
-  const payload = {
-    session_id: crypto.randomUUID(),
-    created_at: new Date().toISOString(),
-    source: { type: (q('src').value ? 'url':'file'), id: q('src').value || '(none)' },
-    dims: Array.from(picked),
-    segments: [{ idx: 0, text: q('text').value, scores: Array.from(picked).map(d => ({ dim: d, score: 0.7 }))}],
-    rep_actions: []
-  };
-  return JSON.stringify(payload, null, 2);
+
+function naiveSplit(s){
+  return (s||'').split(/(?<=[\.\!\?])\s+/).map(x=>x.trim()).filter(Boolean).slice(0,10);
 }
 
-q('export').onclick = () => { q('out').style.display='block'; q('out').textContent=jsonPreview(); };
+function buildSummary() {
+  const sents = naiveSplit(q('text').value);
+  const half = Math.ceil(Math.min(sents.length,6)/2);
+  const best = sents.slice(0, half);
+  const qs   = sents.slice(half, half*2);
+
+  q('best').innerHTML = best.map(t=>`<li>${t}</li>`).join('');
+  q('questions').innerHTML = qs.map(t=>`<li>${t}</li>`).join('');
+
+  if (q('includeTranscript').checked) {
+    q('tx').textContent = q('text').value || '(none)';
+    q('txWrap').style.display = 'block';
+  } else {
+    q('txWrap').style.display = 'none';
+  }
+}
+
+q('build').onclick = buildSummary;
 
 document.getElementById('issue').onclick = (e) => {
-  const title = encodeURIComponent(`[ScripTagger] ${q('title').value || '(untitled)'}`);
+  buildSummary();
+  const best = Array.from(q('best').querySelectorAll('li')).map(li=>`- ${li.textContent}`).join('\n') || '(none)';
+  const qs   = Array.from(q('questions').querySelectorAll('li')).map(li=>`- ${li.textContent}`).join('\n') || '(none)';
+  const dims = Array.from(picked).join(', ') || '(none)';
+
+  const title = encodeURIComponent(`[ScripTagger] Summary for ${q('src').value || '(no link)'}`);
   const body  = encodeURIComponent([
-    `Speaker: ${q('speaker').value || '(unknown)'}`,
     `Source: ${q('src').value || '(none)'}`,
+    `Dimensions: ${dims}`,
     ``,
-    'Session JSON:',
-    '```json',
-    jsonPreview(),
-    '```'
+    `Best claims:\n${best}`,
+    ``,
+    `Questions to verify:\n${qs}`,
+    ``,
+    q('includeTranscript').checked ? `Transcript:\n\n${q('text').value}\n` : '(Transcript omitted by default)',
   ].join('\n'));
   e.currentTarget.href = `https://github.com/rickballard/MeritRank/issues/new?labels=evidence&title=${title}&body=${body}`;
 };
@@ -100,6 +124,8 @@ label{display:block;margin:.75rem 0} input,textarea{width:100%}
 .chips button{padding:.5rem .75rem;border:1px solid #ccc;border-radius:.5rem;background:#fff}
 .chips button.on{border-color:#2a7;box-shadow:0 0 0 2px #2a7 inset}
 .actions{display:flex;gap:.75rem;margin:.75rem 0}
+.grid{display:grid;gap:1rem;grid-template-columns:1fr; }
+@media(min-width:720px){ .grid{grid-template-columns:1fr 1fr;} }
 .muted{opacity:.7}
 </style>
 </body></html>

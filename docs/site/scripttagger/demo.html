@@ -116,6 +116,38 @@ document.getElementById('issue').onclick = (e) => {
   ].join('\n'));
   e.currentTarget.href = `https://github.com/rickballard/MeritRank/issues/new?labels=evidence&title=${title}&body=${body}`;
 };
+function buildAIPrompt() {
+  const src = q("src").value || "(no link)";
+  const best = Array.from(q("best").querySelectorAll("li")).map(li => "- " + li.textContent).join("\n") || "(none)";
+  const qs   = Array.from(q("questions").querySelectorAll("li")).map(li => "- " + li.textContent).join("\n") || "(none)";
+  const tx   = q("includeTranscript").checked ? (q("text").value || "(none)") : "(omitted)";
+
+  return [
+`You are a neutral assistant. The user wants a fair second opinion on a public talk or article: ${src}.`,
+`Below is a two-panel summary produced by an auditing tool (ScripTagger).`,
+`Best claims:\n${best}`,
+`Questions to verify:\n${qs}`,
+`Transcript (optional): ${tx}`,
+`Tasks:`,
+`1) Reframe 3 concise, non-leading questions the user should ask next.`,
+`2) Flag any claims that deserve high-stakes verification and suggest 3 independent sources to check.`,
+`3) Give a short "if true / if false" implications note for each key claim.`,
+`Rules: be calm, non-persuasive, and avoid flattery. No politics or loyalty nudges. Return a short, readable answer.`
+  ].join("\n\n");
+}
+
+document.getElementById("askAI").onclick = async () => {
+  buildSummary();
+  const prompt = buildAIPrompt();
+  const payload = { title: "Second opinion request", text: prompt };
+  try {
+    if (navigator.share)      await navigator.share(payload);
+    else if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
+    else location.href = "mailto:?subject=" + encodeURIComponent("Second opinion request") + "&body=" + encodeURIComponent(prompt);
+  } catch (e) {
+    if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
+  }
+};
 </script>
 
 <style>
@@ -129,3 +161,4 @@ label{display:block;margin:.75rem 0} input,textarea{width:100%}
 .muted{opacity:.7}
 </style>
 </body></html>
+

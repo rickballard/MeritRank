@@ -3,15 +3,12 @@
 <title>ScripTagger Demo — Opename</title>
 <link rel="stylesheet" href="https://opename.org/assets/style.css">
 <body>
-<header>
-  <nav>
-    <a class="brand" href="https://opename.org/">
-      <img src="/assets/opename-192.png" alt="Opename logo" class="brand-logo"><span>Opename</span>
-    </a>
-    <a href="https://opename.org/docs/scripttagger/">Overview</a>
-    <a href="https://opename.org/docs/scripttagger/design.html">Design</a>
-  </nav>
-</header>
+<header><nav>
+  <a class="brand" href="https://opename.org/"><img src="/assets/opename-192.png" alt="Opename logo" class="brand-logo"><span>Opename</span></a>
+  <a href="https://opename.org/docs/scripttagger/">Overview</a>
+  <a href="https://opename.org/docs/scripttagger/design.html">Design</a>
+  <a href="https://opename.org/docs/scripttagger/methodology.html">Methodology</a>
+</nav></header>
 
 <main class="card">
   <h1>ScripTagger (tap around)</h1>
@@ -19,6 +16,19 @@
   <label>Event link (YouTube/livestream/article)
     <input id="src" placeholder="https://…"/>
   </label>
+
+  <div class="row">
+    <label>Noise mode
+      <select id="mode">
+        <option value="auto">Auto</option>
+        <option value="crowd">Crowd</option>
+        <option value="stage">Stage</option>
+        <option value="quiet">Quiet</option>
+      </select>
+    </label>
+    <button id="cal">Calibrate noise (3s)</button>
+    <span id="calVal" class="muted"></span>
+  </div>
 
   <label>What stood out? (paste a few sentences)</label>
   <textarea id="text" rows="6" placeholder="Paste brief notes or quotes…"></textarea>
@@ -35,6 +45,7 @@
 
   <div class="actions">
     <button id="build">Build my summary</button>
+    <button id="upgrade">Upgrade transcript from URL</button>
     <a id="issue" class="btn" href="#" target="_blank" rel="noopener">Prefill evidence issue</a>
   </div>
 
@@ -55,13 +66,16 @@
     <pre id="tx"></pre>
   </details>
 
-  <p class="muted">Demo only. Real recording & uploads disabled. Observations feed
-  consensus; only positive credits publish.</p>
+  <div class="actions">
+    <button id="askAI">Ask my AI for a second opinion</button>
+  </div>
+
+  <pre id="out" style="white-space:pre-wrap;display:none;"></pre>
+
+  <p class="muted">Demo only. Recording & uploads disabled. Observations feed consensus; only positive credits publish.</p>
 </main>
 
-<footer>
-  <div>© 2025 Opename · <a href="https://opename.org/privacy.html">Privacy</a> · <a href="https://opename.org/terms.html">Terms</a></div>
-</footer>
+<footer><div>© 2025 Opename · <a href="https://opename.org/privacy.html">Privacy</a> · <a href="https://opename.org/terms.html">Terms</a></div></footer>
 
 <script>
 const chips = document.querySelectorAll('.chips button');
@@ -73,125 +87,107 @@ chips.forEach(b => b.addEventListener('click', () => {
 }));
 
 const q = s => document.getElementById(s);
+function naiveSplit(s){ return (s||'').split(/(?<=[.!?])\\s+/).map(x=>x.trim()).filter(Boolean).slice(0,10); }
 
-function naiveSplit(s){
-  return (s||'').split(/(?<=[\.\!\?])\s+/).map(x=>x.trim()).filter(Boolean).slice(0,10);
-}
+let calibrated = null;
+q('cal').onclick = async () => {
+  // demo stub: pretend we measured ambient level
+  calibrated = (55 + Math.round(Math.random()*20));
+  q('calVal').textContent = `~${calibrated} dBA`;
+};
 
 function buildSummary() {
   const sents = naiveSplit(q('text').value);
   const half = Math.ceil(Math.min(sents.length,6)/2);
-  const best = sents.slice(0, half);
-  const qs   = sents.slice(half, half*2);
-
-  q('best').innerHTML = best.map(t=>`<li>${t}</li>`).join('');
-  q('questions').innerHTML = qs.map(t=>`<li>${t}</li>`).join('');
-
-  if (q('includeTranscript').checked) {
-    q('tx').textContent = q('text').value || '(none)';
-    q('txWrap').style.display = 'block';
-  } else {
-    q('txWrap').style.display = 'none';
-  }
+  q('best').innerHTML = sents.slice(0, half).map(t=>`<li>${t}</li>`).join('');
+  q('questions').innerHTML = sents.slice(half, half*2).map(t=>`<li>${t}</li>`).join('');
+  if (q('includeTranscript').checked) { q('tx').textContent = q('text').value || '(none)'; q('txWrap').style.display = 'block'; }
+  else { q('txWrap').style.display = 'none'; }
 }
 
-q('build').onclick = buildSummary;
+function sessionJSON() {
+  const best = Array.from(q('best').querySelectorAll('li')).map(li=>li.textContent);
+  const qs   = Array.from(q('questions').querySelectorAll('li')).map(li=>li.textContent);
+  return JSON.stringify({
+    session_id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+    source: { type: (q('src').value ? 'url' : 'file'), id: q('src').value || '(none)' },
+    dims: Array.from(picked),
+    audio_profile: { mode: q('mode').value, calibrated_dbA: calibrated, features: ["ns","agc"] },
+    stt: { engine: "demo", lang: "en", avg_confidence: 0.65, status: q('includeTranscript').checked ? "preliminary" : "preliminary" },
+    transcript_sources: q('includeTranscript').checked ? [{ type:"local-audio" }] : [],
+    summary: {
+      best_claims: best.map(t=>({ text:t, evidence:[], rationale:"" })),
+      questions:   qs.map(t=>({ text:t, needed_evidence:"", rationale:"" })),
+      include_transcript: q('includeTranscript').checked
+    },
+    rep_actions: []
+  }, null, 2);
+}
+
+q('build').onclick = () => { buildSummary(); q('out').style.display='block'; q('out').textContent=sessionJSON(); };
+
+q('upgrade').onclick = () => {
+  const u = prompt('Paste official video/captions URL to upgrade transcript:');
+  if (!u) return;
+  q('includeTranscript').checked = true;
+  buildSummary();
+  q('out').style.display='block';
+  const data = JSON.parse(sessionJSON());
+  data.stt.status = "upgraded";
+  data.transcript_sources.push({ type:"remote-captions", url:u, added_at:new Date().toISOString() });
+  q('out').textContent = JSON.stringify(data,null,2);
+};
+
+function buildAIPrompt() {
+  buildSummary();
+  const best = Array.from(q("best").querySelectorAll("li")).map(li => "- " + li.textContent).join("\\n") || "(none)";
+  const qs   = Array.from(q("questions").querySelectorAll("li")).map(li => "- " + li.textContent).join("\\n") || "(none)";
+  const tx   = q("includeTranscript").checked ? (q("text").value || "(none)") : "(omitted)";
+  const src  = q("src").value || "(no link)";
+  return [
+`You are a neutral assistant. The user wants a fair second opinion on a public talk or article: ${src}.`,
+`Below is a two-panel summary produced by an auditing tool (ScripTagger).`,
+`Best claims:\\n${best}`,
+`Questions to verify:\\n${qs}`,
+`Transcript (optional): ${tx}`,
+`Tasks:`,
+`1) Reframe 3 concise, non-leading questions the user should ask next.`,
+`2) Flag any claims that deserve high-stakes verification and suggest 3 independent sources to check.`,
+`3) Give a short "if true / if false" implications note for each key claim.`,
+`Rules: be calm, non-persuasive, and avoid flattery. No politics or loyalty nudges. Return a short, readable answer.`
+  ].join("\\n\\n");
+}
+
+document.getElementById("askAI").onclick = async () => {
+  const prompt = buildAIPrompt();
+  const payload = { title: "Second opinion request", text: prompt };
+  try {
+    if (navigator.share)      await navigator.share(payload);
+    else if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
+    else location.href = "mailto:?subject=" + encodeURIComponent("Second opinion request") + "&body=" + encodeURIComponent(prompt);
+  } catch (e) {
+    if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
+  }
+};
 
 document.getElementById('issue').onclick = (e) => {
   buildSummary();
-  const best = Array.from(q('best').querySelectorAll('li')).map(li=>`- ${li.textContent}`).join('\n') || '(none)';
-  const qs   = Array.from(q('questions').querySelectorAll('li')).map(li=>`- ${li.textContent}`).join('\n') || '(none)';
-  const dims = Array.from(picked).join(', ') || '(none)';
-
   const title = encodeURIComponent(`[ScripTagger] Summary for ${q('src').value || '(no link)'}`);
-  const body  = encodeURIComponent([
-    `Source: ${q('src').value || '(none)'}`,
-    `Dimensions: ${dims}`,
-    ``,
-    `Best claims:\n${best}`,
-    ``,
-    `Questions to verify:\n${qs}`,
-    ``,
-    q('includeTranscript').checked ? `Transcript:\n\n${q('text').value}\n` : '(Transcript omitted by default)',
-  ].join('\n'));
+  const body  = encodeURIComponent(['```json', sessionJSON(), '```'].join('\\n'));
   e.currentTarget.href = `https://github.com/rickballard/MeritRank/issues/new?labels=evidence&title=${title}&body=${body}`;
-};
-function buildAIPrompt() {
-  const src = q("src").value || "(no link)";
-  const best = Array.from(q("best").querySelectorAll("li")).map(li => "- " + li.textContent).join("\n") || "(none)";
-  const qs   = Array.from(q("questions").querySelectorAll("li")).map(li => "- " + li.textContent).join("\n") || "(none)";
-  const tx   = q("includeTranscript").checked ? (q("text").value || "(none)") : "(omitted)";
-
-  return [
-`You are a neutral assistant. The user wants a fair second opinion on a public talk or article: ${src}.`,
-`Below is a two-panel summary produced by an auditing tool (ScripTagger).`,
-`Best claims:\n${best}`,
-`Questions to verify:\n${qs}`,
-`Transcript (optional): ${tx}`,
-`Tasks:`,
-`1) Reframe 3 concise, non-leading questions the user should ask next.`,
-`2) Flag any claims that deserve high-stakes verification and suggest 3 independent sources to check.`,
-`3) Give a short "if true / if false" implications note for each key claim.`,
-`Rules: be calm, non-persuasive, and avoid flattery. No politics or loyalty nudges. Return a short, readable answer.`
-  ].join("\n\n");
-}
-
-document.getElementById("askAI").onclick = async () => {
-  buildSummary();
-  const prompt = buildAIPrompt();
-  const payload = { title: "Second opinion request", text: prompt };
-  try {
-    if (navigator.share)      await navigator.share(payload);
-    else if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
-    else location.href = "mailto:?subject=" + encodeURIComponent("Second opinion request") + "&body=" + encodeURIComponent(prompt);
-  } catch (e) {
-    if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
-  }
-};
-function buildAIPrompt() {
-  const src = q("src").value || "(no link)";
-  const best = Array.from(q("best").querySelectorAll("li")).map(li => "- " + li.textContent).join("\n") || "(none)";
-  const qs   = Array.from(q("questions").querySelectorAll("li")).map(li => "- " + li.textContent).join("\n") || "(none)";
-  const tx   = q("includeTranscript").checked ? (q("text").value || "(none)") : "(omitted)";
-
-  return [
-`You are a neutral assistant. The user wants a fair second opinion on a public talk or article: ${src}.`,
-`Below is a two-panel summary produced by an auditing tool (ScripTagger).`,
-`Best claims:\n${best}`,
-`Questions to verify:\n${qs}`,
-`Transcript (optional): ${tx}`,
-`Tasks:`,
-`1) Reframe 3 concise, non-leading questions the user should ask next.`,
-`2) Flag any claims that deserve high-stakes verification and suggest 3 independent sources to check.`,
-`3) Give a short "if true / if false" implications note for each key claim.`,
-`Rules: be calm, non-persuasive, and avoid flattery. No politics or loyalty nudges. Return a short, readable answer.`
-  ].join("\n\n");
-}
-
-document.getElementById("askAI").onclick = async () => {
-  buildSummary();
-  const prompt = buildAIPrompt();
-  const payload = { title: "Second opinion request", text: prompt };
-  try {
-    if (navigator.share)      await navigator.share(payload);
-    else if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
-    else location.href = "mailto:?subject=" + encodeURIComponent("Second opinion request") + "&body=" + encodeURIComponent(prompt);
-  } catch (e) {
-    if (navigator.clipboard) { await navigator.clipboard.writeText(prompt); alert("Copied prompt to clipboard — open your AI and paste."); }
-  }
 };
 </script>
 
 <style>
-label{display:block;margin:.75rem 0} input,textarea{width:100%}
+label{display:block;margin:.75rem 0} input,textarea,select{width:100%}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
 .chips button{padding:.5rem .75rem;border:1px solid #ccc;border-radius:.5rem;background:#fff}
 .chips button.on{border-color:#2a7;box-shadow:0 0 0 2px #2a7 inset}
-.actions{display:flex;gap:.75rem;margin:.75rem 0}
-.grid{display:grid;gap:1rem;grid-template-columns:1fr; }
-@media(min-width:720px){ .grid{grid-template-columns:1fr 1fr;} }
+.actions{display:flex;flex-wrap:wrap;gap:.75rem;margin:.75rem 0}
+.grid{display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:720px){ .grid{grid-template-columns:1fr 1fr} }
+.row{display:flex;gap:.75rem;align-items:end}
 .muted{opacity:.7}
 </style>
 </body></html>
-
-

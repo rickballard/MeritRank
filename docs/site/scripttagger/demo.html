@@ -1,0 +1,105 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ScripTagger Demo — Opename</title>
+<link rel="stylesheet" href="https://opename.org/assets/style.css">
+<body>
+<header>
+  <nav>
+    <a class="brand" href="https://opename.org/">
+      <img src="/assets/opename-192.png" alt="Opename logo" class="brand-logo"><span>Opename</span>
+    </a>
+    <a href="https://opename.org/docs/scripttagger/">Overview</a>
+    <a href="https://opename.org/docs/scripttagger/design.html">Design</a>
+  </nav>
+</header>
+
+<main class="card">
+  <h1>ScripTagger (tap around)</h1>
+
+  <label>Event title
+    <input id="title" placeholder="City Hall Q&amp;A (Apr 4)" />
+  </label>
+
+  <label>Speaker (as claimed)
+    <input id="speaker" placeholder="@handle or First Last" />
+  </label>
+
+  <label>Source link (YouTube, livestream, article…)
+    <input id="src" placeholder="https://…"/>
+  </label>
+
+  <label>Segment text (~20 sentences)
+    <textarea id="text" rows="6" placeholder="Paste what was said here…"></textarea>
+  </label>
+
+  <div id="chips" class="chips">
+    <button data-dim="TruthAlignment">Truth</button>
+    <button data-dim="EvidenceHygiene">Evidence</button>
+    <button data-dim="CivicConduct">Conduct</button>
+    <button data-dim="Anti-Manipulation">Anti-Manip.</button>
+    <button data-dim="AmplificationQuality">Amplif.</button>
+  </div>
+
+  <div class="actions">
+    <button id="export">Export (JSON preview)</button>
+    <a id="issue" class="btn" href="#" target="_blank" rel="noopener">Prefill evidence issue</a>
+  </div>
+
+  <pre id="out" style="white-space:pre-wrap;display:none;"></pre>
+
+  <p class="muted">This is a demo. Real recording &amp; uploads are disabled.
+  Submissions are observations only; positives publish after consensus.</p>
+</main>
+
+<footer>
+  <div>© 2025 Opename · <a href="https://opename.org/privacy.html">Privacy</a> · <a href="https://opename.org/terms.html">Terms</a></div>
+</footer>
+
+<script>
+const chips = document.querySelectorAll('#chips button');
+const picked = new Set();
+chips.forEach(b => b.addEventListener('click', e => {
+  const dim = b.dataset.dim;
+  if (picked.has(dim)) { picked.delete(dim); b.classList.remove('on'); }
+  else { picked.add(dim); b.classList.add('on'); }
+}));
+
+const q = s => document.getElementById(s);
+function jsonPreview() {
+  const payload = {
+    session_id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
+    source: { type: (q('src').value ? 'url':'file'), id: q('src').value || '(none)' },
+    dims: Array.from(picked),
+    segments: [{ idx: 0, text: q('text').value, scores: Array.from(picked).map(d => ({ dim: d, score: 0.7 }))}],
+    rep_actions: []
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+q('export').onclick = () => { q('out').style.display='block'; q('out').textContent=jsonPreview(); };
+
+document.getElementById('issue').onclick = (e) => {
+  const title = encodeURIComponent(`[ScripTagger] ${q('title').value || '(untitled)'}`);
+  const body  = encodeURIComponent([
+    `Speaker: ${q('speaker').value || '(unknown)'}`,
+    `Source: ${q('src').value || '(none)'}`,
+    ``,
+    'Session JSON:',
+    '```json',
+    jsonPreview(),
+    '```'
+  ].join('\n'));
+  e.currentTarget.href = `https://github.com/rickballard/MeritRank/issues/new?labels=evidence&title=${title}&body=${body}`;
+};
+</script>
+
+<style>
+label{display:block;margin:.75rem 0} input,textarea{width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
+.chips button{padding:.5rem .75rem;border:1px solid #ccc;border-radius:.5rem;background:#fff}
+.chips button.on{border-color:#2a7;box-shadow:0 0 0 2px #2a7 inset}
+.actions{display:flex;gap:.75rem;margin:.75rem 0}
+.muted{opacity:.7}
+</style>
+</body></html>

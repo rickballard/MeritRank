@@ -1,0 +1,45 @@
+name: Evidence submission
+description: Submit a public link that supports a positive, verifiable claim (RepTag/ScripTag).
+labels: [evidence]
+body:
+  - type: input
+    id: subject
+    attributes:
+      label: Subject handle or DID
+      description: e.g., alice@substack or did:web:example.org:alice
+      placeholder: handle or DID
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Public URL
+      description: Official/public link only (post, blog, release, feed item).
+      placeholder: https://...
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Substack
+        - GitHub
+        - Blog
+        - YouTube
+        - Other
+  - type: checkboxes
+    id: dims
+    attributes:
+      label: Dimensions (hint)
+      options:
+        - label: TruthAlignment
+        - label: EvidenceHygiene
+        - label: CivicConduct
+        - label: Anti-Manipulation
+        - label: AmplificationQuality
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Why this matters; context for curators.

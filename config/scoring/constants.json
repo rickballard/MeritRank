@@ -1,0 +1,5 @@
+{
+  "negative_dominance": 4.0,
+  "decay_half_life_days": 90,
+  "min_events_for_score": 1
+}

@@ -9,7 +9,7 @@ def test_insufficient_when_no_signal():
     assert score([])["status"] == "insufficient_evidence"
 
 def test_negative_dominance_overrides_positives():
-    evts=[mk(0.2,  1.0, 1.0) for _ in range(10)] + [mk(0.9, -1.0, 0.8)]
+    evts=[mk(0.2,1.0,1.0) for _ in range(10)] + [mk(0.9,-1.0,0.8)]
     r=score(evts)
     assert r["status"]=="ok" and r["components"]["neg"]>r["components"]["pos"]
 

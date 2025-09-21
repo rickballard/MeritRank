@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 DEFAULTS = {"negative_dominance": 4.0, "decay_half_life_days": 90, "min_events_for_score": 1}
 
 def load_constants():
-    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))  # repo root
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     p = os.path.join(root, "config", "scoring", "constants.json")
     try:
         return {**DEFAULTS, **json.load(open(p, "r", encoding="utf-8"))}

@@ -1,0 +1,4 @@
+{ "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Identity","type":"object","required":["did","created_at","labels","status"],
+  "properties":{"did":{"type":"string"},"created_at":{"type":"string","format":"date-time"},
+  "labels":{"type":"array","items":{"type":"string"}},"status":{"type":"string"} } }

@@ -1,0 +1,3 @@
+components/seeder/out/
+__pycache__/
+tools/score-demo/.venv/

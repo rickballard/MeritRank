@@ -1,0 +1,15 @@
+openapi: 3.0.3
+info: { title: MeritRank Registry API, version: 0.1.0 }
+paths:
+  /api/identities/{did}:
+    get:
+      parameters: [{ in: path, name: did, required: true, schema: { type: string } }]
+      responses: { "200": { description: OK } }
+  /api/events:
+    post:
+      requestBody: { required: true, content: { application/json: { } } }
+      responses: { "202": { description: Accepted } }
+  /api/scores/{did}:
+    get:
+      parameters: [{ in: path, name: did, required: true, schema: { type: string } }]
+      responses: { "200": { description: OK } }

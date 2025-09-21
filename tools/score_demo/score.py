@@ -1,31 +1,40 @@
 #!/usr/bin/env python3
-import argparse, json, math
+import argparse, json, math, os
 from datetime import datetime, timezone
+
+DEFAULTS = {"negative_dominance": 4.0, "decay_half_life_days": 90, "min_events_for_score": 1}
+
+def load_constants():
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))  # repo root
+    p = os.path.join(root, "config", "scoring", "constants.json")
+    try:
+        return {**DEFAULTS, **json.load(open(p, "r", encoding="utf-8"))}
+    except Exception:
+        return DEFAULTS
 
 def parse_ts(s):
     return datetime.fromisoformat(s.replace("Z","+00:00")).astimezone(timezone.utc)
 
-def decay(ts, half=90.0):
+def decay(ts, half_days):
     dt = (datetime.now(timezone.utc)-ts).total_seconds()/86400.0
-    return 0.5**(max(0.0, dt)/half)
+    return 0.5**(max(0.0, dt)/float(half_days))
 
 def score(events):
-    pos = 0.0
-    neg = 0.0
+    C = load_constants()
+    pos = 0.0; neg = 0.0
     n   = len(events)
 
     for e in events:
-        ts = parse_ts(e.get("timestamp")) if e.get("timestamp") else datetime.now(timezone.utc)
-        w  = decay(ts) * float(e.get("confidence", 0.5))
+        ts  = parse_ts(e.get("timestamp")) if e.get("timestamp") else datetime.now(timezone.utc)
+        w   = decay(ts, C["decay_half_life_days"]) * float(e.get("confidence", 0.5))
         imp = float(e.get("impact", 0.0))
         sev = float(e.get("severity", 0.0))
         if sev >= 0.7 and imp < 0:
-            neg += 4.0 * abs(imp) * w
+            neg += C["negative_dominance"] * abs(imp) * w
         else:
             pos += imp * w
 
-    # No positive or negative signal -> insufficient evidence
-    if pos == 0.0 and neg == 0.0:
+    if n < int(C["min_events_for_score"]) or (pos == 0.0 and neg == 0.0):
         return {"score": None, "status": "insufficient_evidence", "n_events": n}
 
     s = max(0.0, 100.0 * (1/(1+math.exp(-(pos - neg)))))

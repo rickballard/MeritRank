@@ -1,3 +1,5 @@
 # One URL per line
 https://example.com/
 https://example.org/
+https://example.org/
+https://www.iana.org/domains/reserved

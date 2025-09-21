@@ -1,0 +1,26 @@
+name: seeder-smoke
+on:
+  schedule: [ { cron: '17 3 * * *' } ]  # daily, 03:17 UTC
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Seed (polite, mapper basic)
+        run: |
+          python components/seeder/seeder.py --mapper basic --allowlist components/seeder/config/allowlist.txt --out components/seeder/out/events.ndjson || true
+      - name: Score
+        run: |
+          python tools/score_demo/score.py --in components/seeder/out/events.ndjson --out tools/score_demo/out.json || true
+          cat tools/score_demo/out.json || true
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seeder-smoke
+          path: |
+            components/seeder/out/events.ndjson
+            tools/score_demo/out.json

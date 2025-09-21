@@ -1,0 +1,5 @@
+{
+  "user_agent": "CoEveSeeder/0.0.2 (+https://example.invalid/meritrank)",
+  "min_delay_ms": 1500,
+  "timeout_s": 20
+}

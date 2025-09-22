@@ -1,5 +1,4 @@
 {
-  "default": { "default_confidence": 0.30, "hint_confidence": 0.10, "hint_impact": 0.20, "hint_severity": 0.20 },
-  "example.org": { "default_confidence": 0.30 },
-  "iana.org":    { "default_confidence": 0.35 }
+  "example.org": { "org": "Example Org", "weight": 0.2 },
+  "iana.org":    { "org": "IANA",        "weight": 0.4 }
 }

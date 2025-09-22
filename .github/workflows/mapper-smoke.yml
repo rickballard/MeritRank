@@ -1,0 +1,27 @@
+name: mapper-smoke
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "21 7 * * 1"
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Prepare local sample URI
+        id: uri
+        run: |
+          echo "uri=file://$GITHUB_WORKSPACE/components/seeder/fixtures/sample_cred.html" >> $GITHUB_OUTPUT
+      - name: Allowlist local sample
+        run: |
+          mkdir -p components/seeder/config components/seeder/out
+          echo "${{ steps.uri.outputs.uri }}" > components/seeder/config/allowlist.txt
+      - name: Seed (mapper=basic)
+        run: python components/seeder/seeder.py --mapper basic --allowlist components/seeder/config/allowlist.txt --out components/seeder/out/events.ndjson
+      - name: Score
+        run: python tools/score_demo/score.py --in components/seeder/out/events.ndjson --out tools/score_demo/out.json
+      - name: Show result
+        run: cat tools/score_demo/out.json

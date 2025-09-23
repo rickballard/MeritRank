@@ -1,11 +1,12 @@
 {
   "$schema": "./meritrank.schema.json",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "weights": {
     "readme_length": 0.4,
     "ps1_count": 0.2,
-    "md_count": 0.15,
-    "registry_points": 0.25
+    "md_count": 0.12,
+    "registry_points": 0.23,
+    "todo_health": 0.05
   },
   "transforms": {
     "readme_length": {
@@ -27,13 +28,19 @@
       "type": "log",
       "base": 10.0,
       "scale": 1.0
+    },
+    "todo_health": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
     }
   },
   "caps": {
     "readme_length": 0.95,
     "ps1_count": 0.9,
     "md_count": 0.9,
-    "registry_points": 0.95
+    "registry_points": 0.95,
+    "todo_health": 1.0
   },
   "fail_guard": {
     "enabled": true,

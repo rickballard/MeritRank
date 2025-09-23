@@ -26,20 +26,21 @@ function LogNorm([double]$x, [double]$base, [double]$scale) {
   [math]::Min(1.0, ($scale * ([math]::Log($x, $base))) / 3.0)
 }
 
-# Raw
 $raw = @{
   readme_length   = [double]($map.repoReadmeLength ?? 0)
   ps1_count       = [double]($map.ps1Count ?? 0)
   md_count        = [double]($map.mdCount ?? 0)
   registry_points = [double]($map.registry_points ?? 0)
+  todo_count      = [double]($map.todo_count ?? 0)
 }
 
-# Normalized
 $norm = [ordered]@{
   readme_length   = Sigmoid $raw.readme_length ([double]$config.transforms.readme_length.k) ([double]$config.transforms.readme_length.x0)
   ps1_count       = LogNorm $raw.ps1_count ([double]$config.transforms.ps1_count.base) ([double]$config.transforms.ps1_count.scale)
   md_count        = LogNorm $raw.md_count  ([double]$config.transforms.md_count.base)  ([double]$config.transforms.md_count.scale)
   registry_points = LogNorm $raw.registry_points ([double]$config.transforms.registry_points.base) ([double]$config.transforms.registry_points.scale)
+  # todo_health: inverse of warnings
+  todo_health     = 1.0 - (LogNorm $raw.todo_count ([double]$config.transforms.todo_health.base) ([double]$config.transforms.todo_health.scale))
 }
 
 # Caps
@@ -56,6 +57,7 @@ $components = [ordered]@{
   ps1_count       = [double]$w.ps1_count       * [double]$norm['ps1_count']
   md_count        = [double]$w.md_count        * [double]$norm['md_count']
   registry_points = [double]$w.registry_points * [double]$norm['registry_points']
+  todo_health     = [double]$w.todo_health     * [double]$norm['todo_health']
 }
 $score = [math]::Round(($components.Values | Measure-Object -Sum).Sum, 4)
 

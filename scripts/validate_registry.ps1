@@ -10,6 +10,8 @@ if (-not (Test-Path $regDir)) {
 $errors = @()
 $files  = @(Get-ChildItem -Path $regDir -File -Filter *.json)  # ensure array
 
+$validCats = @('docs','code','ops','policy')
+
 foreach ($f in $files) {
   try {
     $obj = Get-Content -Raw -Encoding UTF8 $f.FullName | ConvertFrom-Json
@@ -20,9 +22,13 @@ foreach ($f in $files) {
   if (-not $obj.id)   { $errors += "Missing id in $($f.Name)"; continue }
   if (-not $obj.name) { $errors += "Missing name in $($f.Name)"; continue }
   try {
-    $null = [double]$obj.points
-  } catch {
-    $errors += "Missing/invalid points in $($f.Name)"
+    $pts = [double]$obj.points
+    if ($pts -lt 0) { $errors += "points < 0 in $($f.Name)" }
+  } catch { $errors += "Missing/invalid points in $($f.Name)" }
+  if ($obj.PSObject.Properties.Name -contains 'category') {
+    if ($obj.category -and -not ($validCats -contains ($obj.category.ToString().ToLower()))) {
+      $errors += "Invalid category '$($obj.category)' in $($f.Name)"
+    }
   }
 }
 

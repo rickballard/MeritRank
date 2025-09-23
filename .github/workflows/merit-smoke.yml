@@ -27,6 +27,11 @@ jobs:
         run: |
           pwsh -File scripts/validate_config.ps1 -ConfigPath config/meritrank.config.json
 
+      - name: Validate registry
+        shell: pwsh
+        run: |
+          pwsh -File scripts/validate_registry.ps1 -RepoRoot .
+
       - name: Ensure out dir
         shell: pwsh
         run: |
@@ -37,7 +42,7 @@ jobs:
         run: |
           pwsh -File scripts/registry_ingest.ps1 -RepoRoot . -OutDir ./out
 
-      - name: Mapper (demo)
+      - name: Mapper (demo + TODO scan)
         shell: pwsh
         run: |
           pwsh -File scripts/mapper_demo.ps1 -RepoRoot . -OutDir ./out
@@ -46,6 +51,11 @@ jobs:
         shell: pwsh
         run: |
           pwsh -File scripts/score_demo.ps1 -MapPath ./out/map_demo.json -OutDir ./out -ConfigPath config/meritrank.config.json
+
+      - name: Weights provenance
+        shell: pwsh
+        run: |
+          pwsh -File scripts/weights_provenance.ps1 -ConfigPath config/meritrank.config.json -OutDir ./out
 
       - name: Historical cache (restore latest)
         id: cache-restore
@@ -65,7 +75,6 @@ jobs:
           $score = (Get-Content -Raw -Encoding UTF8 'out/meritrank_score.txt').Split('=')[1]
           $ts = [DateTime]::UtcNow.ToString('o')
           "$($env:GITHUB_RUN_ID),$ts,${{ matrix.os }},$score" | Out-File -FilePath $hist -Encoding UTF8 -Append
-          Write-Host "History updated: $hist"
 
       - name: Historical cache (save new)
         uses: actions/cache/save@v4
@@ -80,9 +89,16 @@ jobs:
           path: |
             out/meritrank_score.txt
             out/meritrank_detail.json
+            out/badge.json
+            out/explanations.txt
+            out/weights_change.txt
+            .meritrank_cache/weights.history.jsonl
 
-      - name: Summary + guardrail
+      - name: Summary + PR-only guard
         shell: pwsh
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
         run: |
           pwsh -File scripts/ci_summary_and_guard.ps1 -HistoryCsv ".meritrank_cache/history.csv" -SummaryPath $env:GITHUB_STEP_SUMMARY -ConfigPath "config/meritrank.config.json"
 

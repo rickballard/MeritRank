@@ -1,0 +1,8 @@
+{
+  "weights": {
+    "readme_length": 0.4,
+    "ps1_count": 0.2,
+    "md_count": 0.2,
+    "registry_points": 0.2
+  }
+}

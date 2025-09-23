@@ -1,10 +1,11 @@
 {
   "$schema": "./meritrank.schema.json",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "weights": {
-    "readme_length": 0.5,
-    "ps1_count": 0.3,
-    "md_count": 0.2
+    "readme_length": 0.45,
+    "ps1_count": 0.25,
+    "md_count": 0.15,
+    "registry_points": 0.15
   },
   "transforms": {
     "readme_length": {
@@ -21,6 +22,15 @@
       "type": "log",
       "base": 10.0,
       "scale": 1.0
+    },
+    "registry_points": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
     }
+  },
+  "fail_guard": {
+    "enabled": true,
+    "max_drop_pct": 10.0
   }
 }

@@ -32,6 +32,11 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
 
+      - name: Registry ingest
+        shell: pwsh
+        run: |
+          pwsh -File scripts/registry_ingest.ps1 -RepoRoot . -OutDir ./out
+
       - name: Mapper (demo)
         shell: pwsh
         run: |
@@ -76,18 +81,10 @@ jobs:
             out/meritrank_score.txt
             out/meritrank_detail.json
 
-      - name: Job summary (last few rows)
+      - name: Summary + guardrail
         shell: pwsh
         run: |
-          $hist = ".meritrank_cache/history.csv"
-          "### MeritRank: Recent Scores" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-          if (Test-Path $hist) {
-            $rows = Get-Content -Encoding UTF8 $hist | Select-Object -Last 6
-            "run_id,timestamp,os,score" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-            foreach ($r in $rows) { $r | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append }
-          } else {
-            "No history yet." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-          }
+          pwsh -File scripts/ci_summary_and_guard.ps1 -HistoryCsv ".meritrank_cache/history.csv" -SummaryPath $env:GITHUB_STEP_SUMMARY -ConfigPath "config/meritrank.config.json"
 
       - name: Legacy Smoke (optional)
         if: always()

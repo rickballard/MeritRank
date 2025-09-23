@@ -4,3 +4,4 @@ https://example.org/
 https://example.org/
 https://www.iana.org/domains/reserved
 file:///C:/Users/Chris/AppData/Local/Temp/coeve_cred_sample.html
+file:///C:/Users/Chris/Documents/GitHub/MeritRank/components/seeder/fixtures/sample_cred.html

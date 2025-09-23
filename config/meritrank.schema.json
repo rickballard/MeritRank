@@ -1,0 +1,14 @@
+{
+  "description": "Informal documentation of MeritRank config; not a full JSON-Schema for enforcement.",
+  "required": [
+    "version",
+    "weights",
+    "transforms"
+  ],
+  "weights": "Map of metric -> weight (0..1). Sum should be ~1.0",
+  "transforms": {
+    "readme_length": "Transform config to normalize raw metric to 0..1 (sigmoid supported)",
+    "ps1_count": "Transform config (log scaling)",
+    "md_count": "Transform config (log scaling)"
+  }
+}

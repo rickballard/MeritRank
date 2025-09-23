@@ -22,6 +22,11 @@ jobs:
         with:
           version: '7.4.x'
 
+      - name: Validate config
+        shell: pwsh
+        run: |
+          pwsh -File scripts/validate_config.ps1 -ConfigPath config/meritrank.config.json
+
       - name: Ensure out dir
         shell: pwsh
         run: |
@@ -35,9 +40,56 @@ jobs:
       - name: Scorer (demo)
         shell: pwsh
         run: |
-          pwsh -File scripts/score_demo.ps1 -MapPath ./out/map_demo.json -OutDir ./out
+          pwsh -File scripts/score_demo.ps1 -MapPath ./out/map_demo.json -OutDir ./out -ConfigPath config/meritrank.config.json
 
-      - name: Smoke (legacy path, optional)
+      - name: Historical cache (restore latest)
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .meritrank_cache
+          key: meritrank-history-${{ github.run_id }}
+          restore-keys: |
+            meritrank-history-
+
+      - name: Append to history
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path .meritrank_cache | Out-Null
+          $hist = ".meritrank_cache/history.csv"
+          if (-not (Test-Path $hist)) { "run_id,timestamp,os,score" | Out-File -FilePath $hist -Encoding UTF8 }
+          $score = (Get-Content -Raw -Encoding UTF8 'out/meritrank_score.txt').Split('=')[1]
+          $ts = [DateTime]::UtcNow.ToString('o')
+          "$($env:GITHUB_RUN_ID),$ts,${{ matrix.os }},$score" | Out-File -FilePath $hist -Encoding UTF8 -Append
+          Write-Host "History updated: $hist"
+
+      - name: Historical cache (save new)
+        uses: actions/cache/save@v4
+        with:
+          path: .meritrank_cache
+          key: meritrank-history-${{ github.run_id }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: meritrank-out-${{ matrix.os }}
+          path: |
+            out/meritrank_score.txt
+            out/meritrank_detail.json
+
+      - name: Job summary (last few rows)
+        shell: pwsh
+        run: |
+          $hist = ".meritrank_cache/history.csv"
+          "### MeritRank: Recent Scores" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+          if (Test-Path $hist) {
+            $rows = Get-Content -Encoding UTF8 $hist | Select-Object -Last 6
+            "run_id,timestamp,os,score" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+            foreach ($r in $rows) { $r | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append }
+          } else {
+            "No history yet." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+          }
+
+      - name: Legacy Smoke (optional)
         if: always()
         shell: pwsh
         run: |
@@ -45,26 +97,4 @@ jobs:
             pwsh -File ./scripts/CoEve_Smoke.ps1 -RepoRoot .
           } else {
             Write-Host "CoEve_Smoke.ps1 not present; continuing."
-          }
-
-      - name: Upload score artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: meritrank-score-${{ matrix.os }}
-          path: out/meritrank_score.txt
-          if-no-files-found: error
-
-      - name: Job summary
-        shell: pwsh
-        run: |
-          $p = 'out/meritrank_score.txt'
-          if (Test-Path $p) {
-            $val = Get-Content -Raw -Encoding UTF8 $p
-            "### MeritRank Score"    | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-            "OS: ${{ matrix.os }}"   | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-            "````"                   | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-            $val                     | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-            "````"                   | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
-          } else {
-            'No score file found' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
           }

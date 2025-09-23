@@ -1,0 +1,26 @@
+{
+  "$schema": "./meritrank.schema.json",
+  "version": "0.1.0",
+  "weights": {
+    "readme_length": 0.5,
+    "ps1_count": 0.3,
+    "md_count": 0.2
+  },
+  "transforms": {
+    "readme_length": {
+      "type": "sigmoid",
+      "k": 0.001,
+      "x0": 1000
+    },
+    "ps1_count": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
+    },
+    "md_count": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
+    }
+  }
+}

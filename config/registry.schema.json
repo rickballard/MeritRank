@@ -1,0 +1,21 @@
+{
+  "description": "Registry item minimal shape.",
+  "required": [
+    "id",
+    "name",
+    "points"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "points": {
+      "type": "number"
+    }
+  }
+}

@@ -1,11 +1,11 @@
 {
   "$schema": "./meritrank.schema.json",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "weights": {
-    "readme_length": 0.45,
-    "ps1_count": 0.25,
+    "readme_length": 0.4,
+    "ps1_count": 0.2,
     "md_count": 0.15,
-    "registry_points": 0.15
+    "registry_points": 0.25
   },
   "transforms": {
     "readme_length": {
@@ -29,8 +29,20 @@
       "scale": 1.0
     }
   },
+  "caps": {
+    "readme_length": 0.95,
+    "ps1_count": 0.9,
+    "md_count": 0.9,
+    "registry_points": 0.95
+  },
   "fail_guard": {
     "enabled": true,
-    "max_drop_pct": 10.0
+    "max_drop_pct": 10.0,
+    "pr_only": true,
+    "target_branch": "main"
+  },
+  "badge": {
+    "good_threshold": 0.8,
+    "warn_threshold": 0.6
   }
 }

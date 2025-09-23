@@ -1,9 +1,8 @@
 {
-  "description": "Informal documentation of MeritRank config; not a full JSON Schema.",
+  "description": "MeritRank config doc (informal). Keys: version, weights, transforms, caps, fail_guard, badge.",
   "required": [
     "version",
     "weights",
     "transforms"
-  ],
-  "notes": "weights.override.json can override 'weights' only."
+  ]
 }

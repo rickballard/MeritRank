@@ -1,4 +1,26 @@
 {
-  "example.org": { "org": "Example Org", "weight": 0.2 },
-  "iana.org":    { "org": "IANA",        "weight": 0.4 }
+  "example.org": {
+    "selector": "meta[name='co-tag'][content='credential']",
+    "type": "cred_page",
+    "signals": [
+      {
+        "impact": 0.1,
+        "severity": 0.2
+      }
+    ]
+  },
+  "iana.org": {
+    "org": "IANA",
+    "weight": 0.4
+  },
+  "www.iana.org": {
+    "selector": "title",
+    "type": "info",
+    "signals": [
+      {
+        "impact": 0.05,
+        "severity": 0.1
+      }
+    ]
+  }
 }

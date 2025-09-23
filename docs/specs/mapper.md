@@ -1,14 +1,7 @@
-# Mapper Spec (v0)
+## Domain hints (v0)
 
-**Scope (v0):**
-- Parse allowed pages for light-weight markers:
-  - `<meta name="coeve:did" content="...">`
-  - `<meta name="coeve:pgp" content="...">`
-  - `<meta name="coeve:c2pa" content="present">`
-- Emit external observation events with provenance and confidence.
-- Apply optional domain hints (`components/seeder/config/domain_hints.json`) to weight trust.
-- No forced entity merges; only candidate evidence.
+The seeder's **basic** mapper can optionally consult components/seeder/config/domain_hints.json
+to inject low-confidence signals for specific hosts (e.g., xample.org, www.iana.org) or to
+supply CSS selectors for scraping simple meta tags. Hints are strictly optional and carry small
+weights to avoid false confidence.
 
-**Out of scope (v0):**
-- Full ER (entity resolution), cryptographic verification, or KERI rotations.
-- Any scraping behind auth or ignoring robots.

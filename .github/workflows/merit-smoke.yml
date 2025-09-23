@@ -1,0 +1,70 @@
+name: MeritRank Smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        uses: PowerShell/PowerShell@v1
+        with:
+          version: '7.4.x'
+
+      - name: Ensure out dir
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+
+      - name: Mapper (demo)
+        shell: pwsh
+        run: |
+          pwsh -File scripts/mapper_demo.ps1 -RepoRoot . -OutDir ./out
+
+      - name: Scorer (demo)
+        shell: pwsh
+        run: |
+          pwsh -File scripts/score_demo.ps1 -MapPath ./out/map_demo.json -OutDir ./out
+
+      - name: Smoke (legacy path, optional)
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path ./scripts/CoEve_Smoke.ps1) {
+            pwsh -File ./scripts/CoEve_Smoke.ps1 -RepoRoot .
+          } else {
+            Write-Host "CoEve_Smoke.ps1 not present; continuing."
+          }
+
+      - name: Upload score artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meritrank-score-${{ matrix.os }}
+          path: out/meritrank_score.txt
+          if-no-files-found: error
+
+      - name: Job summary
+        shell: pwsh
+        run: |
+          $p = 'out/meritrank_score.txt'
+          if (Test-Path $p) {
+            $val = Get-Content -Raw -Encoding UTF8 $p
+            "### MeritRank Score"    | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+            "OS: ${{ matrix.os }}"   | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+            "````"                   | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+            $val                     | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+            "````"                   | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+          } else {
+            'No score file found' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding UTF8 -Append
+          }

@@ -9,4 +9,4 @@ jobs:
         with: { python-version: "3.11" }
       - run: |
           python -m pip install -U pip pytest
-          pytest -q
+python -m pytest -q

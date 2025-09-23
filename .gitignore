@@ -1,3 +1,4 @@
 components/seeder/out/
 __pycache__/
 tools/score-demo/.venv/
+tools/score_demo/out.json

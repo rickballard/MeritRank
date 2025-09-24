@@ -73,6 +73,7 @@ jobs:
           path: public
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: badge
       if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -83,5 +84,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
 
 

@@ -3,6 +3,8 @@ name: MeritRank Badge Publish
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
   schedule:
     - cron: "23 5 * * *"   # daily keep-warm + refresh (UTC)
@@ -82,3 +84,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+

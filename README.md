@@ -1,3 +1,5 @@
+[MeritRank details →](https://rickballard.github.io/MeritRank/)
+
 ![MeritRank](https://img.shields.io/endpoint?url=https://rickballard.github.io/MeritRank/badge.json)
 
 # MeritRank
@@ -59,4 +61,5 @@ pwsh -f .\scripts\smoke.ps1
 macOS/Linux:
 ./scripts/smoke.sh
 ./scripts/smoke.sh
+
 

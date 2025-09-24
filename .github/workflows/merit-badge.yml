@@ -51,39 +51,21 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path public | Out-Null
           Copy-Item out/badge.json public/badge.json -Force
-          if (Test-Path out/meritrank_score.txt) { Copy-Item out/meritrank_score.txt public/ -Force }
-          if (Test-Path out/explanations.txt)    { Copy-Item out/explanations.txt    public/ -Force }
-          $html = @(
-            '<!doctype html><meta charset="utf-8"><title>MeritRank</title>',
-            '<h1>MeritRank</h1>',
-            '<p><img alt="MeritRank" src="https://img.shields.io/endpoint?url=https://rickballard.github.io/MeritRank/badge.json&amp;cacheSeconds=300"></p>',
-            '<ul>',
-            '  <li><a href="badge.json">badge.json</a></li>',
-            '  <li><a href="meritrank_score.txt">meritrank_score.txt</a></li>',
-            '  <li><a href="explanations.txt">explanations.txt</a></li>',
-            '</ul>'
-          )
-          [IO.File]::WriteAllLines("public/index.html", $html, [Text.UTF8Encoding]::new($true))
 
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: badge
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
-
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: badge
-      if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-
-

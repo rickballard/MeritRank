@@ -10,13 +10,17 @@ $map = Get-Content -Raw -Encoding UTF8 $MapPath | ConvertFrom-Json
 if (-not (Test-Path $ConfigPath)) { throw "Config not found: $ConfigPath" }
 $config = Get-Content -Raw -Encoding UTF8 $ConfigPath | ConvertFrom-Json
 
-# Optional weights override
+# Optional weights override (MERGE keys instead of replace)
 $overridePath = "config\weights.override.json"
 if (Test-Path $overridePath) {
   try {
     $ov = Get-Content -Raw -Encoding UTF8 $overridePath | ConvertFrom-Json
-    if ($ov.weights) { $config.weights = $ov.weights }
-    Write-Host "Applied weights.override.json" -ForegroundColor Yellow
+    if ($ov.weights) {
+      foreach ($name in $ov.weights.PSObject.Properties.Name) {
+        $config.weights.$name = [double]$ov.weights.$name
+      }
+    }
+    Write-Host "Applied weights.override.json (merged)" -ForegroundColor Yellow
   } catch { Write-Warning "weights.override.json invalid; ignored" }
 }
 
@@ -26,6 +30,7 @@ function LogNorm([double]$x, [double]$base, [double]$scale) {
   [math]::Min(1.0, ($scale * ([math]::Log($x, $base))) / 3.0)
 }
 
+# Raw
 $raw = @{
   readme_length   = [double]($map.repoReadmeLength ?? 0)
   ps1_count       = [double]($map.ps1Count ?? 0)
@@ -34,30 +39,26 @@ $raw = @{
   todo_count      = [double]($map.todo_count ?? 0)
 }
 
+# Normalized (+ derived todo_health)
 $norm = [ordered]@{
   readme_length   = Sigmoid $raw.readme_length ([double]$config.transforms.readme_length.k) ([double]$config.transforms.readme_length.x0)
   ps1_count       = LogNorm $raw.ps1_count ([double]$config.transforms.ps1_count.base) ([double]$config.transforms.ps1_count.scale)
   md_count        = LogNorm $raw.md_count  ([double]$config.transforms.md_count.base)  ([double]$config.transforms.md_count.scale)
   registry_points = LogNorm $raw.registry_points ([double]$config.transforms.registry_points.base) ([double]$config.transforms.registry_points.scale)
-  # todo_health: inverse of warnings
-  todo_health     = 1.0 - (LogNorm $raw.todo_count ([double]$config.transforms.todo_health.base) ([double]$config.transforms.todo_health.scale))
 }
-
-# Caps
-if ($config.caps) {
-  foreach ($k in $config.caps.PSObject.Properties.Name) {
-    $mx = [double]$config.caps.$k
-    if ($norm.Contains($k) -and $mx -gt 0) { $norm[$k] = [math]::Min([double]$norm[$k], $mx) }
-  }
+if ($config.transforms.PSObject.Properties.Name -contains 'todo_health') {
+  $norm['todo_health'] = 1.0 - (LogNorm $raw.todo_count ([double]$config.transforms.todo_health.base) ([double]$config.transforms.todo_health.scale))
 }
 
 $w = $config.weights
-$components = [ordered]@{
-  readme_length   = [double]$w.readme_length   * [double]$norm['readme_length']
-  ps1_count       = [double]$w.ps1_count       * [double]$norm['ps1_count']
-  md_count        = [double]$w.md_count        * [double]$norm['md_count']
-  registry_points = [double]$w.registry_points * [double]$norm['registry_points']
-  todo_health     = [double]$w.todo_health     * [double]$norm['todo_health']
+
+# Only use metrics present in BOTH weights and norm
+$weightNames = @($w.PSObject.Properties.Name)
+$metricNames = @($norm.Keys | Where-Object { $weightNames -contains $_ })
+
+$components = [ordered]@{}
+foreach ($k in $metricNames) {
+  $components[$k] = [double]$w.$k * [double]$norm[$k]
 }
 $score = [math]::Round(($components.Values | Measure-Object -Sum).Sum, 4)
 
@@ -80,9 +81,9 @@ if ($config.badge) {
 $badge = @{ label='MeritRank'; message="$score"; color=$badgeColor }
 $badge | ConvertTo-Json -Depth 4 | Out-File -FilePath $badgePath -Encoding UTF8 -Force
 
-# Explanations
+# Explanations (same metric set)
 $exp = @()
-foreach ($k in $components.Keys) {
+foreach ($k in $metricNames) {
   $exp += ("{0}: +{1:N4} (norm {2:N3} × w {3:N2})" -f $k,
     [double]$components[$k],
     [double]$norm[$k],

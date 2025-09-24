@@ -3,9 +3,9 @@ name: MeritRank Badge Publish
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
-  schedule:
-    - cron: "23 5 * * *"   # daily keep-warm + refresh (UTC)
 
 permissions:
   contents: read
@@ -74,6 +74,7 @@ jobs:
 
   deploy:
     needs: badge
+      if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -82,3 +83,5 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+

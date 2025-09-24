@@ -1,0 +1,31 @@
+{
+  "description": "Registry item schema (informal): id,name,points>=0; optional category in {docs,code,ops,policy}.",
+  "required": [
+    "id",
+    "name",
+    "points"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "points": {
+      "type": "number",
+      "minimum": 0
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "docs",
+        "code",
+        "ops",
+        "policy"
+      ]
+    }
+  }
+}

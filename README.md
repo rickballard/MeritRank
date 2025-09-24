@@ -1,3 +1,5 @@
+![MeritRank](https://img.shields.io/endpoint?url=https://rickballard.github.io/MeritRank/badge.json)
+
 # MeritRank
 > **Your digital halo — verifiable kudos, not callouts.**
 [![CI](https://github.com/rickballard/MeritRank/actions/workflows/ci.yml/badge.svg)](https://github.com/rickballard/MeritRank/actions/workflows/ci.yml) [![mapper-smoke](https://github.com/rickballard/MeritRank/actions/workflows/mapper-smoke.yml/badge.svg)](https://github.com/rickballard/MeritRank/actions/workflows/mapper-smoke.yml)
@@ -41,3 +43,20 @@ See `specs/schema_meritrank_v0.1.md` for details.
 A **digital halo** is a tamper-evident stream of kudos and impact receipts.
 It favors attestations and proofs—not allegations. Records can be optionally
 anchored to public chains for stronger auditability.
+
+
+See **[Trust & Safety](docs/policy/TRUST_SAFETY.md)** for our positive-first content posture.
+## Quick smoke
+Windows:
+`powershell
+pwsh -f .\scripts\smoke.ps1
+macOS/Linux:
+./scripts/smoke.sh
+rnrn## Quick smoke
+Windows:
+```powershell
+pwsh -f .\scripts\smoke.ps1
+macOS/Linux:
+./scripts/smoke.sh
+./scripts/smoke.sh
+

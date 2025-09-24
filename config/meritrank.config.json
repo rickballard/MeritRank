@@ -1,0 +1,55 @@
+{
+  "$schema": "./meritrank.schema.json",
+  "version": "0.4.0",
+  "weights": {
+    "readme_length": 0.4,
+    "ps1_count": 0.2,
+    "md_count": 0.12,
+    "registry_points": 0.23,
+    "todo_health": 0.05
+  },
+  "transforms": {
+    "readme_length": {
+      "type": "sigmoid",
+      "k": 0.001,
+      "x0": 1000
+    },
+    "ps1_count": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
+    },
+    "md_count": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
+    },
+    "registry_points": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
+    },
+    "todo_health": {
+      "type": "log",
+      "base": 10.0,
+      "scale": 1.0
+    }
+  },
+  "caps": {
+    "readme_length": 0.95,
+    "ps1_count": 0.9,
+    "md_count": 0.9,
+    "registry_points": 0.95,
+    "todo_health": 1.0
+  },
+  "fail_guard": {
+    "enabled": true,
+    "max_drop_pct": 10.0,
+    "pr_only": true,
+    "target_branch": "main"
+  },
+  "badge": {
+    "good_threshold": 0.8,
+    "warn_threshold": 0.6
+  }
+}

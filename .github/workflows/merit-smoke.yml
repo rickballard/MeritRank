@@ -1,0 +1,113 @@
+name: MeritRank Smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        uses: PowerShell/PowerShell@v1
+        with:
+          version: '7.4.x'
+
+      - name: Validate config
+        shell: pwsh
+        run: |
+          pwsh -File scripts/validate_config.ps1 -ConfigPath config/meritrank.config.json
+
+      - name: Validate registry
+        shell: pwsh
+        run: |
+          pwsh -File scripts/validate_registry.ps1 -RepoRoot .
+
+      - name: Ensure out dir
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+
+      - name: Registry ingest
+        shell: pwsh
+        run: |
+          pwsh -File scripts/registry_ingest.ps1 -RepoRoot . -OutDir ./out
+
+      - name: Mapper (demo + TODO scan)
+        shell: pwsh
+        run: |
+          pwsh -File scripts/mapper_demo.ps1 -RepoRoot . -OutDir ./out
+
+      - name: Scorer (demo)
+        shell: pwsh
+        run: |
+          pwsh -File scripts/score_demo.ps1 -MapPath ./out/map_demo.json -OutDir ./out -ConfigPath config/meritrank.config.json
+
+      - name: Weights provenance
+        shell: pwsh
+        run: |
+          pwsh -File scripts/weights_provenance.ps1 -ConfigPath config/meritrank.config.json -OutDir ./out
+
+      - name: Historical cache (restore latest)
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .meritrank_cache
+          key: meritrank-history-${{ github.run_id }}
+          restore-keys: |
+            meritrank-history-
+
+      - name: Append to history
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path .meritrank_cache | Out-Null
+          $hist = ".meritrank_cache/history.csv"
+          if (-not (Test-Path $hist)) { "run_id,timestamp,os,score" | Out-File -FilePath $hist -Encoding UTF8 }
+          $score = (Get-Content -Raw -Encoding UTF8 'out/meritrank_score.txt').Split('=')[1]
+          $ts = [DateTime]::UtcNow.ToString('o')
+          "$($env:GITHUB_RUN_ID),$ts,${{ matrix.os }},$score" | Out-File -FilePath $hist -Encoding UTF8 -Append
+
+      - name: Historical cache (save new)
+        uses: actions/cache/save@v4
+        with:
+          path: .meritrank_cache
+          key: meritrank-history-${{ github.run_id }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: meritrank-out-${{ matrix.os }}
+          path: |
+            out/meritrank_score.txt
+            out/meritrank_detail.json
+            out/badge.json
+            out/explanations.txt
+            out/weights_change.txt
+            .meritrank_cache/weights.history.jsonl
+
+      - name: Summary + PR-only guard
+        shell: pwsh
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: |
+          pwsh -File scripts/ci_summary_and_guard.ps1 -HistoryCsv ".meritrank_cache/history.csv" -SummaryPath $env:GITHUB_STEP_SUMMARY -ConfigPath "config/meritrank.config.json"
+
+      - name: Legacy Smoke (optional)
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path ./scripts/CoEve_Smoke.ps1) {
+            pwsh -File ./scripts/CoEve_Smoke.ps1 -RepoRoot .
+          } else {
+            Write-Host "CoEve_Smoke.ps1 not present; continuing."
+          }

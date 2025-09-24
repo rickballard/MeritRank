@@ -1,0 +1,71 @@
+name: MeritRank Badge Publish
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PowerShell
+        uses: PowerShell/PowerShell@v1
+        with: { version: '7.4.x' }
+
+      - name: Validate config
+        shell: pwsh
+        run: pwsh -File scripts/validate_config.ps1 -ConfigPath config/meritrank.config.json
+
+      - name: Validate registry
+        shell: pwsh
+        run: pwsh -File scripts/validate_registry.ps1 -RepoRoot .
+
+      - name: Ensure out dir
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path out | Out-Null
+
+      - name: Registry ingest
+        shell: pwsh
+        run: pwsh -File scripts/registry_ingest.ps1 -RepoRoot . -OutDir ./out
+
+      - name: Mapper (demo + TODO scan)
+        shell: pwsh
+        run: pwsh -File scripts/mapper_demo.ps1 -RepoRoot . -OutDir ./out
+
+      - name: Scorer
+        shell: pwsh
+        run: pwsh -File scripts/score_demo.ps1 -MapPath ./out/map_demo.json -OutDir ./out -ConfigPath config/meritrank.config.json
+
+      - name: Prepare pages artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path public | Out-Null
+          Copy-Item out/badge.json public/badge.json -Force
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with: { path: public }
+
+  deploy:
+    needs: badge
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

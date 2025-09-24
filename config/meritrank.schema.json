@@ -1,0 +1,8 @@
+{
+  "description": "MeritRank config doc (informal). Keys: version, weights, transforms, caps, fail_guard, badge.",
+  "required": [
+    "version",
+    "weights",
+    "transforms"
+  ]
+}

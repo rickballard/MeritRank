@@ -8,12 +8,6 @@
 
 [![Mapper Smoke](https://github.com/rickballard/MeritRank/actions/workflows/mapper-smoke.yml/badge.svg?branch=main)](https://github.com/rickballard/MeritRank/actions/workflows/mapper-smoke.yml)
 
-# MeritRank
-> **Your digital halo — verifiable kudos, not callouts.**
-[![CI](https://github.com/rickballard/MeritRank/actions/workflows/ci.yml/badge.svg)](https://github.com/rickballard/MeritRank/actions/workflows/ci.yml) [![mapper-smoke](https://github.com/rickballard/MeritRank/actions/workflows/mapper-smoke.yml/badge.svg)](https://github.com/rickballard/MeritRank/actions/workflows/mapper-smoke.yml)
-
-**Goal:** Provide the **reputation, credit, and voting primitives** for CoCivium — ethically grounded, transparent, and portable across chains. Early focus: **ScripTag / RepTag / VoteRank** interop so claims are **evaluatable, reproducible, and rankable**.
-
 ## Why
 DonDemogog-style actors thrive in opacity. MeritRank counters with:
 - **Transparent scoring** (open metrics & weights)

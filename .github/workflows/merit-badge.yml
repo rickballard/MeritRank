@@ -3,18 +3,14 @@ name: MeritRank Badge Publish
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
-  schedule:
-    - cron: "23 5 * * *"   # daily keep-warm + refresh (UTC)
 
 permissions:
   contents: read
   pages: write
   id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
   badge:
@@ -46,27 +42,21 @@ jobs:
         shell: pwsh
         run: pwsh -File scripts/score_demo.ps1 -MapPath ./out/map_demo.json -OutDir ./out -ConfigPath config/meritrank.config.json
 
-      - name: Prepare pages artifact (badge + details + index)
+      - name: Prepare pages artifact (badge + index)
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path public | Out-Null
           Copy-Item out/badge.json public/badge.json -Force
-          if (Test-Path out/meritrank_score.txt) { Copy-Item out/meritrank_score.txt public/ -Force }
-          if (Test-Path out/explanations.txt)    { Copy-Item out/explanations.txt    public/ -Force }
           $html = @(
             '<!doctype html><meta charset="utf-8"><title>MeritRank</title>',
             '<h1>MeritRank</h1>',
             '<p><img alt="MeritRank" src="https://img.shields.io/endpoint?url=https://rickballard.github.io/MeritRank/badge.json&amp;cacheSeconds=300"></p>',
             '<ul>',
             '  <li><a href="badge.json">badge.json</a></li>',
-            '  <li><a href="meritrank_score.txt">meritrank_score.txt</a></li>',
-            '  <li><a href="explanations.txt">explanations.txt</a></li>',
             '</ul>'
           )
           [IO.File]::WriteAllLines("public/index.html", $html, [Text.UTF8Encoding]::new($true))
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -74,11 +64,19 @@ jobs:
 
   deploy:
     needs: badge
+    if: github.event_name != 'pull_request'
+    # keep Pages concurrency isolated to deploy-only
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
